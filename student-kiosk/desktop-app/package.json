@@ -1,0 +1,14 @@
+{
+  "name": "college-lab-kiosk",
+  "version": "1.0.0",
+  "description": "Student Kiosk App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "dependencies": {
+    "electron": "^22.3.27",
+    "socket.io-client": "^4.7.2"
+  }
+}
