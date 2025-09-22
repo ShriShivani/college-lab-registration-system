@@ -1,61 +1,32 @@
 const { app, BrowserWindow, ipcMain, screen, dialog, globalShortcut, desktopCapturer } = require('electron');
 const path = require('path');
 const os = require('os');
-const io = require('socket.io-client');
-const https = require('https');
-const http = require('http');
+
+// Use dynamic import for fetch which works across node versions and Electron
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 let mainWindow = null;
-let isSessionActive = false;
 let currentSession = null;
-let socket = null;
+let sessionActive = false;
 let screenshotInterval = null;
 
-const CENTRAL_SERVER = 'http://localhost:5000';
+const SERVER_URL = process.env.SERVER_URL || "http://localhost:5000";
+const LAB_ID = process.env.LAB_ID || "LAB-01";
 
-// Auto-start configuration
-app.setLoginItemSettings({
-  openAtLogin: true,
-  openAsHidden: false
-});
-
-// Single instance
-const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
-  });
-}
-
-function createKioskWindow() {
+function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWindow = new BrowserWindow({
-    width: width,
-    height: height,
-    x: 0,
-    y: 0,
+    width,
+    height,
     frame: false,
-    alwaysOnTop: true,
     fullscreen: true,
-    resizable: false,
-    movable: false,
-    minimizable: false,
-    maximizable: false,
-    closable: false,
+    alwaysOnTop: true,
     skipTaskbar: true,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false
-    },
-    show: false
+      contextIsolation: true,
+    }
   });
 
   mainWindow.loadFile('student-interface.html');
@@ -65,305 +36,180 @@ function createKioskWindow() {
     mainWindow.focus();
 
     globalShortcut.registerAll([
-      'Alt+F4', 'Ctrl+W', 'Ctrl+Alt+Delete', 
-      'Ctrl+Shift+Escape', 'Alt+Tab', 'Escape',
-      'F11', 'Ctrl+R', 'F5', 'Ctrl+Shift+I',
-      'F12', 'Ctrl+U', 'Ctrl+Shift+J'
+      'Alt+F4', 'Ctrl+W', 'Ctrl+Alt+Delete', 'Ctrl+Shift+Escape', 'Alt+Tab',
+      'Escape', 'F11', 'Ctrl+R', 'F5', 'Ctrl+Shift+I', 'F12', 'Ctrl+U'
     ], () => false);
-
-    console.log('🔒 KIOSK MODE ACTIVE');
   });
 
-  mainWindow.on('close', (event) => {
-    if (!isSessionActive) {
-      event.preventDefault();
-      showLoginRequired();
-    }
-  });
-
-  mainWindow.on('blur', () => {
-    if (!isSessionActive) {
-      setTimeout(() => {
-        if (mainWindow && !isSessionActive) {
-          mainWindow.focus();
-        }
-      }, 100);
-    }
-  });
-}
-
-function showLoginRequired() {
-  if (!mainWindow) return;
-  
-  dialog.showMessageBox(mainWindow, {
-    type: 'warning',
-    title: '🔒 Student Login Required',
-    message: 'You must log in to use this computer',
-    buttons: ['Continue'],
-    defaultId: 0
-  });
-}
-
-// Connect to server
-function connectToCentralServer() {
-  try {
-    socket = io(CENTRAL_SERVER);
-
-    socket.on('connect', () => {
-      console.log('✅ Connected to server');
-      socket.emit('computer-online', {
-        computerName: os.hostname(),
-        timestamp: new Date().toISOString()
+  mainWindow.on('close', e => {
+    if (!sessionActive) {
+      e.preventDefault();
+      dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['OK'],
+        title: 'Operation Denied',
+        message: 'You must be logged in to close the application.'
       });
-    });
-
-    socket.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
-    });
-  } catch (error) {
-    console.error('Server connection failed:', error);
-  }
+    }
+  });
 }
 
-// HTTP Request function
-function makeRequest(url, options = {}) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    const client = urlObj.protocol === 'https:' ? https : http;
-    
-    const requestOptions = {
-      method: options.method || 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
+async function loginHandler(event, credentials) {
+  try {
+    const creds = {
+      studentId: credentials.studentId,
+      password: credentials.password,
+      labId: LAB_ID,
     };
 
-    const req = client.request(url, requestOptions, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          resolve({ success: false, error: 'Invalid response' });
-        }
-      });
+    const authRes = await fetch(`${SERVER_URL}/api/student-authenticate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(creds),
     });
-    
-    req.on('error', (error) => {
-      resolve({ success: false, error: error.message });
+    const authData = await authRes.json();
+
+    if (!authData.success) return { success: false, error: authData.error || 'Authentication failed' };
+
+    const sessionRes = await fetch(`${SERVER_URL}/api/student-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentName: authData.student.name,
+        studentId: authData.student.studentId,
+        computerName: os.hostname(),
+        labId: LAB_ID,
+        systemNumber: credentials.systemNumber
+      }),
     });
-    
-    if (options.body) {
-      req.write(options.body);
-    }
-    
-    req.end();
-  });
+    const sessionData = await sessionRes.json();
+
+    if (!sessionData.success) return { success: false, error: sessionData.error || 'Session creation failed' };
+
+    currentSession = { id: sessionData.sessionId, student: authData.student };
+    sessionActive = true;
+
+    mainWindow.minimize();
+
+    startScreenshotStreaming();
+
+    return { success: true, student: authData.student };
+  } catch (error) {
+    return { success: false, error: error.message || 'Unknown error' };
+  }
 }
 
-// IPC Handlers
-ipcMain.handle('student-login', async (event, credentials) => {
-  try {
-    console.log('🔑 Login attempt:', credentials.studentId);
+// Handle both 'login' and 'student-login' for compatibility
+ipcMain.handle('login', loginHandler);
+ipcMain.handle('student-login', loginHandler);
 
-    // Authenticate
-    const authResult = await makeRequest(`${CENTRAL_SERVER}/api/student-authenticate`, {
-      method: 'POST',
-      body: JSON.stringify({
-        studentId: credentials.studentId,
-        password: credentials.password
-      })
-    });
-    
-    if (!authResult.success) {
-      return { success: false, error: authResult.error || 'Authentication failed' };
-    }
-
-    // Create session
-    const sessionResult = await makeRequest(`${CENTRAL_SERVER}/api/student-login`, {
-      method: 'POST',
-      body: JSON.stringify({
-        studentName: authResult.student.name,
-        studentId: authResult.student.studentId,
-        computerName: os.hostname(),
-        labNumber: credentials.labNumber,
-        systemNumber: credentials.systemNumber
-      })
-    });
-
-    if (sessionResult.success) {
-      currentSession = {
-        sessionId: sessionResult.sessionId,
-        student: authResult.student,
-        loginTime: new Date()
-      };
-
-      isSessionActive = true;
-
-      // UNLOCK COMPUTER
-      mainWindow.setAlwaysOnTop(false);
-      mainWindow.setFullScreen(false);
-      mainWindow.minimize();
-
-      startScreenSharing();
-
-      console.log(`✅ Login successful: ${authResult.student.name}`);
-      
-      return { 
-        success: true, 
-        sessionId: sessionResult.sessionId,
-        student: authResult.student
-      };
-    } else {
-      return { success: false, error: sessionResult.error || 'Session creation failed' };
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    return { success: false, error: 'Network connection failed' };
-  }
-});
-
-ipcMain.handle('student-logout', async () => {
-  if (!currentSession) return { success: false, error: 'No active session' };
+ipcMain.handle('logout', async () => {
+  if (!sessionActive || !currentSession) return { success: false, error: 'No active session' };
 
   try {
-    await makeRequest(`${CENTRAL_SERVER}/api/student-logout`, {
+    stopScreenshotStreaming();
+
+    await fetch(`${SERVER_URL}/api/student-logout`, {
       method: 'POST',
-      body: JSON.stringify({ sessionId: currentSession.sessionId })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: currentSession.id }),
     });
 
-    stopScreenSharing();
-
+    sessionActive = false;
     currentSession = null;
-    isSessionActive = false;
 
-    // LOCK COMPUTER
-    mainWindow.setAlwaysOnTop(true);
-    mainWindow.setFullScreen(true);
     mainWindow.restore();
     mainWindow.focus();
 
-    console.log('🔒 Logout successful');
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Unknown error' };
   }
 });
 
-ipcMain.handle('get-system-info', () => ({
-  computerName: os.hostname(),
-  username: os.userInfo().username,
-  timestamp: new Date().toISOString()
-}));
+async function captureScreenshot() {
+  if (!sessionActive || !currentSession) return;
 
-ipcMain.handle('forgot-password', async (event, data) => {
   try {
-    const result = await makeRequest(`${CENTRAL_SERVER}/api/forgot-password`, {
-      method: 'POST',
-      body: JSON.stringify(data)
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: {
+        width: primaryDisplay.size.width,
+        height: primaryDisplay.size.height
+      }
     });
-    return result;
-  } catch (error) {
-    return { success: false, error: 'Network error' };
-  }
-});
 
-ipcMain.handle('verify-dob', async (event, data) => {
-  try {
-    const result = await makeRequest(`${CENTRAL_SERVER}/api/verify-dob`, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return result;
-  } catch (error) {
-    return { success: false, error: 'Network error' };
-  }
-});
+    if (sources.length > 0) {
+      const screenshot = sources[0].thumbnail.toDataURL();
 
-ipcMain.handle('reset-password', async (event, data) => {
-  try {
-    const result = await makeRequest(`${CENTRAL_SERVER}/api/reset-password`, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return result;
-  } catch (error) {
-    return { success: false, error: 'Network error' };
+      await fetch(`${SERVER_URL}/api/update-screenshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: currentSession.id, screenshot }),
+      });
+    }
+  } catch (err) {
+    console.error('Screenshot capture error:', err);
   }
-});
-
-// Screen sharing
-function startScreenSharing() {
-  if (screenshotInterval) return;
-  
-  captureScreen();
-  screenshotInterval = setInterval(captureScreen, 10000);
 }
 
-function stopScreenSharing() {
+function startScreenshotStreaming() {
+  if (screenshotInterval) return;
+  screenshotInterval = setInterval(captureScreenshot, 10000);
+}
+
+function stopScreenshotStreaming() {
   if (screenshotInterval) {
     clearInterval(screenshotInterval);
     screenshotInterval = null;
   }
 }
 
-async function captureScreen() {
-  if (!currentSession) return;
+app.whenReady().then(createWindow);
 
-  try {
-    const sources = await desktopCapturer.getSources({
-      types: ['screen'],
-      thumbnailSize: { width: 800, height: 600 }
-    });
-
-    if (sources.length > 0) {
-      const screenshot = sources[0].thumbnail.toDataURL().split(',')[1];
-
-      makeRequest(`${CENTRAL_SERVER}/api/update-screenshot`, {
-        method: 'POST',
-        body: JSON.stringify({
-          sessionId: currentSession.sessionId,
-          screenshot
-        })
-      }).catch(console.error);
-
-      if (socket && socket.connected) {
-        socket.emit('screen-share', {
-          computerName: os.hostname(),
-          screenshot,
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-  } catch (error) {
-    console.error('Screen capture error:', error);
-  }
-}
-
-// App events
-app.whenReady().then(() => {
-  createKioskWindow();
-  connectToCentralServer();
+app.on('window-all-closed', e => {
+  e.preventDefault();
 });
 
-app.on('window-all-closed', (event) => {
-  event.preventDefault();
-});
-
-app.on('before-quit', (event) => {
-  if (!isSessionActive) {
-    event.preventDefault();
-    showLoginRequired();
-  }
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
-  if (socket) socket.disconnect();
-  stopScreenSharing();
+  stopScreenshotStreaming();
 });
 
-console.log('🎯 COLLEGE LAB KIOSK STARTED');
-console.log(`📍 Computer: ${os.hostname()}`);
+function gracefulLogout() {
+  if (sessionActive && currentSession) {
+    const payload = { sessionId: currentSession.id };
+    fetch(`${SERVER_URL}/api/student-logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).finally(() => {
+      // allow graceful shutdown after notifying
+      app.quit();
+    });
+  } else {
+    app.quit();
+  }
+}
+
+process.on('SIGINT', (signal) => {
+  console.log('SIGINT received, logging out and quitting...');
+  gracefulLogout();
+});
+
+process.on('SIGTERM', (signal) => {
+  console.log('SIGTERM received, logging out and quitting...');
+  gracefulLogout();
+});
+
+app.on('before-quit', (e) => {
+  if (sessionActive) {
+    e.preventDefault();
+    gracefulLogout();
+  }
+});

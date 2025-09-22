@@ -1,171 +1,175 @@
+require('dotenv').config();
+
 const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
 const http = require('http');
+const socketIo = require('socket.io');
 const path = require('path');
-const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = socketIo(server, {
+  cors: { origin: "*" }
+});
 
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../dashboard')));
 
-// WORKING STUDENTS - NO DATABASE NEEDED
-const students = [
-  { studentId: '2024001', password: 'password123', name: 'John Doe', email: 'john.doe@college.edu', dateOfBirth: '2000-01-15', department: 'Computer Science' },
-  { studentId: '2024002', password: 'password123', name: 'Jane Smith', email: 'jane.smith@college.edu', dateOfBirth: '2001-03-20', department: 'IT' },
-  { studentId: 'DEMO001', password: 'demo123', name: 'Demo Student', email: 'demo@college.edu', dateOfBirth: '1999-12-25', department: 'CS' }
-];
+const MONGODB_URI = process.env.MONGODB_URI || 'your_mongodb_connection_string';
+const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
-const sessions = [];
-let sessionCounter = 1;
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB connection error", err));
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../dashboard/index.html')));
+const studentSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  studentId: { type: String, unique: true, required: true },
+  email: { type: String, unique: true, required: true },
+  passwordHash: { type: String, required: true },
+  dateOfBirth: { type: Date, required: true },
+  department: { type: String, required: true },
+  year: { type: Number, required: true },
+  labId: { type: String, required: true }
+});
 
-app.post('/api/student-authenticate', (req, res) => {
-  const { studentId, password } = req.body;
-  console.log(`🔑 Auth attempt: ${studentId} / ${password}`);
-  
-  const student = students.find(s => s.studentId === studentId && s.password === password);
-  
-  if (student) {
-    console.log(`✅ SUCCESS: ${student.name} authenticated`);
-    res.json({ success: true, student });
-  } else {
-    console.log(`❌ FAILED: Invalid credentials for ${studentId}`);
-    res.status(400).json({ success: false, error: 'Invalid student ID or password' });
+studentSchema.methods.verifyPassword = function (password) {
+  return bcrypt.compare(password, this.passwordHash);
+};
+
+const Student = mongoose.model('Student', studentSchema);
+
+const sessionSchema = new mongoose.Schema({
+  studentName: String,
+  studentId: String,
+  computerName: String,
+  labId: String,
+  systemNumber: String,
+  loginTime: { type: Date, default: Date.now },
+  logoutTime: Date,
+  duration: Number,
+  status: { type: String, enum: ['active', 'completed'], default: 'active' },
+  screenshot: String
+});
+
+const Session = mongoose.model('Session', sessionSchema);
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dashboard/index.html'));
+});
+
+app.post('/api/student-register', async (req, res) => {
+  try {
+    const { name, studentId, email, password, dateOfBirth, department, year, labId } = req.body;
+    if (!name || !studentId || !email || !password || !dateOfBirth || !department || !year || !labId)
+      return res.status(400).json({ success: false, error: "Missing required fields." });
+
+    const existing = await Student.findOne({ $or: [{ studentId }, { email }] });
+    if (existing) return res.status(400).json({ success: false, error: "Student ID or email already exists." });
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+    const student = new Student({ name, studentId, email, passwordHash, dateOfBirth, department, year, labId });
+    await student.save();
+    res.json({ success: true, message: "Student registered successfully." });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-app.post('/api/student-login', (req, res) => {
-  const { studentName, studentId, computerName, labNumber, systemNumber } = req.body;
-  const sessionId = 'SESSION_' + Date.now() + '_' + sessionCounter++;
-  
-  const session = {
-    _id: sessionId,
-    studentName, studentId, computerName, labNumber, systemNumber,
-    loginTime: new Date(),
-    status: 'active'
-  };
-  
-  // Remove existing session for this computer
-  const existingIndex = sessions.findIndex(s => s.computerName === computerName && s.status === 'active');
-  if (existingIndex >= 0) {
-    sessions[existingIndex].status = 'completed';
-    sessions[existingIndex].logoutTime = new Date();
-  }
-  
-  sessions.push(session);
-  
-  console.log(`✅ SESSION CREATED: ${sessionId} for ${studentName} on ${computerName}`);
-  
-  // Notify admin via socket
-  io.emit('student-login', {
-    sessionId, studentName, studentId, computerName, labNumber, systemNumber,
-    loginTime: session.loginTime
-  });
-  
-  res.json({ success: true, sessionId });
-});
+app.post('/api/student-authenticate', async (req, res) => {
+  try {
+    const { studentId, password, labId } = req.body;
+    const student = await Student.findOne({ studentId, labId });
+    if (!student) return res.status(400).json({ success: false, error: "Invalid student or lab" });
 
-app.post('/api/student-logout', (req, res) => {
-  const { sessionId } = req.body;
-  
-  const session = sessions.find(s => s._id === sessionId);
-  if (session) {
-    session.logoutTime = new Date();
-    session.status = 'completed';
-    session.duration = Math.floor((session.logoutTime - session.loginTime) / 1000);
-    
-    console.log(`✅ SESSION ENDED: ${sessionId} - ${session.studentName}`);
-    
-    io.emit('student-logout', {
-      sessionId, studentName: session.studentName, computerName: session.computerName,
-      logoutTime: session.logoutTime, duration: session.duration
-    });
-  }
-  
-  res.json({ success: true });
-});
+    const isValid = await student.verifyPassword(password);
+    if (!isValid) return res.status(400).json({ success: false, error: "Incorrect password" });
 
-// Forgot password routes
-app.post('/api/forgot-password', (req, res) => {
-  const { studentId, email } = req.body;
-  const student = students.find(s => s.studentId === studentId && s.email === email);
-  
-  if (student) {
-    res.json({ success: true, message: 'Student found', studentData: student });
-  } else {
-    res.status(400).json({ success: false, error: 'Student not found' });
+    res.json({ success: true, student: { name: student.name, studentId: student.studentId, email: student.email, department: student.department, year: student.year, labId: student.labId } });
+  } catch (error) {
+    console.error("Authentication error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-app.post('/api/verify-dob', (req, res) => {
-  const { studentId, dateOfBirth } = req.body;
-  const student = students.find(s => s.studentId === studentId && s.dateOfBirth === dateOfBirth);
-  
-  if (student) {
-    res.json({ success: true, message: 'DOB verified', resetToken: 'TOKEN_' + Date.now() });
-  } else {
-    res.status(400).json({ success: false, error: 'Invalid date of birth' });
+app.post('/api/student-login', async (req, res) => {
+  try {
+    const { studentName, studentId, computerName, labId, systemNumber } = req.body;
+
+    // Finish any existing active sessions on this computer
+    await Session.updateMany({ computerName, status: 'active' }, { status: 'completed', logoutTime: new Date() });
+
+    const newSession = new Session({ studentName, studentId, computerName, labId, systemNumber, loginTime: new Date(), status: 'active' });
+    await newSession.save();
+
+    io.emit('student-login', { sessionId: newSession._id, studentName, studentId, computerName, labId, systemNumber, loginTime: newSession.loginTime });
+    res.json({ success: true, sessionId: newSession._id });
+  } catch (error) {
+    console.error("Session login error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-app.post('/api/reset-password', (req, res) => {
-  const { resetToken, newPassword } = req.body;
-  console.log(`🔄 Password reset for token: ${resetToken}`);
-  res.json({ success: true, message: 'Password reset successfully' });
+app.post('/api/student-logout', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const session = await Session.findById(sessionId);
+    if (session) {
+      session.status = 'completed';
+      session.logoutTime = new Date();
+      session.duration = Math.floor((session.logoutTime - session.loginTime) / 1000);
+      await session.save();
+
+      io.emit('student-logout', { sessionId, studentName: session.studentName, computerName: session.computerName, logoutTime: session.logoutTime, duration: session.duration });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Session logout error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
-app.post('/api/update-screenshot', (req, res) => {
-  const { sessionId, screenshot } = req.body;
-  const session = sessions.find(s => s._id === sessionId);
-  if (session) {
-    session.screenshot = screenshot;
+// Update session screenshot and emit to all connected clients
+app.post('/api/update-screenshot', async (req, res) => {
+  try {
+    const { sessionId, screenshot } = req.body;
+    await Session.findByIdAndUpdate(sessionId, { screenshot });
     io.emit('screenshot-update', { sessionId, screenshot, timestamp: new Date() });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Screenshot update error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
-  res.json({ success: true });
 });
 
-app.get('/api/active-sessions', (req, res) => {
-  const activeSessions = sessions.filter(s => s.status === 'active');
-  res.json({ success: true, sessions: activeSessions });
+// Get active sessions filtered by lab
+app.get('/api/active-sessions/:labId', async (req, res) => {
+  try {
+    const labIdParam = req.params.labId.toLowerCase();
+    let filter = { status: 'active' };
+    if (labIdParam !== 'all') {
+      filter.labId = labIdParam.toUpperCase();
+    }
+    const sessions = await Session.find(filter).sort({ loginTime: -1 });
+    res.json({ success: true, sessions });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
-app.get('/api/session-history', (req, res) => {
-  res.json({ success: true, sessions: sessions.slice(-20) });
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'Server running', timestamp: new Date() });
-});
-
-// Socket.IO
+// WebSocket events
 io.on('connection', (socket) => {
-  console.log('📡 Client connected');
+  console.log("Client connected:", socket.id);
 
-  socket.on('computer-online', (data) => {
-    console.log(`🖥️ Computer online: ${data.computerName}`);
-  });
+  socket.on('computer-online', (data) => { console.log("Computer online:", data); });
+  socket.on('screen-share', (data) => { socket.broadcast.emit('live-screen', data); });
 
-  socket.on('screen-share', (data) => {
-    socket.broadcast.emit('live-screen', data);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('📡 Client disconnected');
-  });
+  socket.on('disconnect', () => { console.log("Client disconnected:", socket.id); });
 });
 
-server.listen(5000, () => {
-  console.log('🎯 =================================');
-  console.log('🎯 INSTANT WORKING SERVER - PORT 5000');
-  console.log('🖥️  Admin Dashboard: http://localhost:5000');
-  console.log('📡 Socket.IO ready');
-  console.log('✅ DEMO ACCOUNTS READY:');
-  students.forEach(s => {
-    console.log(`   - ${s.name} (${s.studentId}) - Password: ${s.password}`);
-  });
-  console.log('🎯 =================================');
-  console.log('🎉 NO DATABASE - INSTANT DEMO READY!');
-});
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
