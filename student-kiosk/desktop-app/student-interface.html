@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>🔒 College Lab Kiosk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
     <style>
         body {
             background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-            height: 100vh;
+            min-height: 100vh;
             overflow-y: auto;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
@@ -26,26 +28,15 @@
             background: rgba(255, 255, 255, 0.98);
             border-radius: 20px;
             box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
             margin: 20px auto;
-            animation: cardPulse 4s ease-in-out infinite;
-        }
-        @keyframes cardPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.01); }
         }
         .card-header {
             border-radius: 20px 20px 0 0;
         }
         .lock-icon {
             font-size: 4rem;
-            animation: lockShake 3s ease-in-out infinite;
-        }
-        @keyframes lockShake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
         }
         .system-info {
             background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(253, 126, 20, 0.1));
@@ -60,11 +51,6 @@
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
-            animation: demoGlow 2s ease-in-out infinite alternate;
-        }
-        @keyframes demoGlow {
-            from { box-shadow: 0 0 10px rgba(40, 167, 69, 0.3); }
-            to { box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
         }
         .connection-status {
             position: fixed;
@@ -75,27 +61,20 @@
             font-size: 12px;
             font-weight: bold;
             z-index: 9999;
-            animation: statusPulse 2s infinite;
-        }
-        @keyframes statusPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
         }
         .status-connected { background: #28a745; color: white; }
         .status-disconnected { background: #dc3545; color: white; }
         .demo-btn {
             transition: all 0.3s ease;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border: 2px solid transparent;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            font-weight: bold;
+            margin: 5px;
         }
         .demo-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            border: 2px solid #28a745;
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
         }
         .btn-unlock {
             background: linear-gradient(135deg, #28a745, #20c997);
@@ -103,29 +82,24 @@
             font-size: 1.2rem;
             font-weight: bold;
             padding: 15px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            animation: unlockPulse 3s ease-in-out infinite;
-        }
-        @keyframes unlockPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
+            width: 100%;
+            color: white;
         }
         .btn-unlock:hover {
             transform: translateY(-2px);
             box-shadow: 0 15px 30px rgba(40, 167, 69, 0.4);
         }
-        .forgot-password-link {
-            color: #ffc107;
-            text-decoration: none;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-            animation: forgotGlow 2s ease-in-out infinite alternate;
+        .btn-forgot {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            border: none;
+            color: #000;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        @keyframes forgotGlow {
-            from { text-shadow: 1px 1px 2px rgba(255, 193, 7, 0.3); }
-            to { text-shadow: 1px 1px 10px rgba(255, 193, 7, 0.8); }
+        .btn-forgot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 193, 7, 0.4);
+            color: #000;
         }
         .session-modal {
             position: fixed;
@@ -138,11 +112,6 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            animation: modalFadeIn 0.5s ease-in-out;
-        }
-        @keyframes modalFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
         .session-card {
             background: rgba(255, 255, 255, 0.98);
@@ -152,538 +121,446 @@
             width: 90%;
             text-align: center;
             box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-            animation: sessionCardBounce 0.8s ease-out;
-        }
-        @keyframes sessionCardBounce {
-            0% { transform: scale(0.3) translateY(-100px); }
-            50% { transform: scale(1.05) translateY(0); }
-            100% { transform: scale(1) translateY(0); }
         }
         .session-icon {
             font-size: 6rem;
             color: #28a745;
-            animation: sessionSuccess 2s ease-in-out infinite;
-        }
-        @keyframes sessionSuccess {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.1) rotate(-5deg); }
-            75% { transform: scale(1.1) rotate(5deg); }
         }
         .duration-display {
             font-size: 3rem;
             font-weight: bold;
             color: #28a745;
             font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            animation: durationGlow 1s ease-in-out infinite alternate;
-        }
-        @keyframes durationGlow {
-            from { text-shadow: 2px 2px 4px rgba(40, 167, 69, 0.3); }
-            to { text-shadow: 2px 2px 15px rgba(40, 167, 69, 0.8); }
         }
         .debug-section {
-            background: linear-gradient(135deg, rgba(108, 117, 125, 0.1), rgba(52, 58, 64, 0.1));
+            background: rgba(108, 117, 125, 0.1);
             border: 1px solid #dee2e6;
             border-radius: 10px;
             padding: 15px;
             margin-top: 20px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
         }
-        .time-display {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #28a745;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
-        .alert {
-            border: none;
+        .forgot-password-section {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(253, 126, 20, 0.1));
+            border: 2px solid #ffc107;
             border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-    <!-- Connection Status -->
     <div id="connectionStatus" class="connection-status status-disconnected">
-        <i class="fas fa-wifi"></i> Checking...
+        <i class="fas fa-circle"></i> Disconnected
     </div>
 
-    <!-- Main Interface -->
-    <div class="kiosk-container">
+    <div id="loginScreen" class="kiosk-container">
         <div class="login-card">
-            <!-- Header -->
-            <div class="card-header bg-danger text-white text-center py-5">
-                <i class="fas fa-lock lock-icon mb-3"></i>
-                <h1 class="mb-2">🔒 COMPUTER ACCESS RESTRICTED</h1>
-                <h2>Student Authentication Required</h2>
-                <p class="mb-0 fs-5">This system is secured. Login to continue.</p>
+            <div class="card-header bg-danger text-white text-center py-4">
+                <div class="lock-icon mb-3">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h2 class="mb-0"><strong>🖥️ College Lab Registration System</strong></h2>
+                <p class="mb-0 mt-2">Secure Student Kiosk Access</p>
             </div>
-
             <div class="card-body p-4">
-                <!-- System Info -->
                 <div class="system-info">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h4><i class="fas fa-desktop me-2"></i>System Information</h4>
-                            <div class="row">
-                                <div class="col-6">
-                                    <strong>Computer Name:</strong>
-                                    <div id="computerName" class="text-muted">Loading...</div>
-                                </div>
-                                <div class="col-6">
-                                    <strong>Current Time:</strong>
-                                    <div id="currentTime" class="time-display">Loading...</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <div class="alert alert-warning mb-0">
-                                <i class="fas fa-eye fa-2x"></i>
-                                <div class="mt-2"><strong>MONITORED</strong></div>
-                                <small>All activity recorded</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Demo Accounts PROMINENTLY DISPLAYED -->
-                <div class="demo-section">
-                    <h4 class="text-center mb-4">
-                        <i class="fas fa-flask me-2"></i>
-                        <strong>🧪 CLICK DEMO ACCOUNTS TO AUTO-LOGIN</strong>
-                    </h4>
+                    <h5 class="text-danger mb-3"><i class="fas fa-info-circle"></i> System Information</h5>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <button class="btn demo-btn w-100 py-3" onclick="fillDemo('2024001', 'password123')">
-                                <div class="text-success">
-                                    <i class="fas fa-user-graduate fa-2x mb-2"></i>
-                                    <h5 class="mb-1">John Doe</h5>
-                                    <p class="mb-1"><small><strong>ID:</strong> 2024001</small></p>
-                                    <p class="mb-0"><small><strong>Password:</strong> password123</small></p>
-                                </div>
-                            </button>
+                        <div class="col-md-6 mb-2">
+                            <strong>Computer Name:</strong> <span id="computerName">Loading...</span>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <button class="btn demo-btn w-100 py-3" onclick="fillDemo('2024002', 'password123')">
-                                <div class="text-primary">
-                                    <i class="fas fa-user-graduate fa-2x mb-2"></i>
-                                    <h5 class="mb-1">Jane Smith</h5>
-                                    <p class="mb-1"><small><strong>ID:</strong> 2024002</small></p>
-                                    <p class="mb-0"><small><strong>Password:</strong> password123</small></p>
-                                </div>
-                            </button>
+                        <div class="col-md-6 mb-2">
+                            <strong>Lab ID:</strong> <span class="badge bg-danger">LAB-01</span>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <button class="btn demo-btn w-100 py-3" onclick="fillDemo('DEMO001', 'demo123')">
-                                <div class="text-info">
-                                    <i class="fas fa-user-graduate fa-2x mb-2"></i>
-                                    <h5 class="mb-1">Demo Student</h5>
-                                    <p class="mb-1"><small><strong>ID:</strong> DEMO001</small></p>
-                                    <p class="mb-0"><small><strong>Password:</strong> demo123</small></p>
-                                </div>
-                            </button>
+                        <div class="col-md-12 mb-2">
+                            <strong>Current Time:</strong> <span id="currentTime" style="color: #28a745; font-weight: bold;">--:--:--</span>
                         </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <p class="mb-0 text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Click any demo account above to automatically fill login details
-                        </p>
                     </div>
                 </div>
 
-                <!-- Login Form -->
+                <div class="demo-section">
+                    <h5 class="text-success mb-3"><i class="fas fa-rocket"></i> Quick Demo Logins</h5>
+                    <p class="text-muted small mb-3">Click any button below to auto-fill login credentials for demo</p>
+                    <div class="d-flex justify-content-center flex-wrap">
+                        <button class="btn demo-btn" onclick="fillDemo(1)">
+                            <i class="fas fa-user"></i> Demo Student 1
+                        </button>
+                        <button class="btn demo-btn" onclick="fillDemo(2)">
+                            <i class="fas fa-user"></i> Demo Student 2
+                        </button>
+                        <button class="btn demo-btn" onclick="fillDemo(3)">
+                            <i class="fas fa-user"></i> Demo Student 3
+                        </button>
+                    </div>
+                </div>
+
+                <div id="errorAlert" class="alert alert-danger d-none" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> <span id="errorMessage"></span>
+                </div>
+
                 <form id="loginForm">
-                    <h3 class="mb-4 text-center">
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        Student Login
-                    </h3>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="fas fa-user"></i> Student ID</label>
+                        <input type="text" class="form-control form-control-lg" id="studentId" placeholder="Enter your Student ID" required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="fas fa-key"></i> Password</label>
+                        <input type="password" class="form-control form-control-lg" id="password" placeholder="Enter your Password" required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="fas fa-desktop"></i> System Number</label>
+                        <select class="form-select form-select-lg" id="systemNumber" required>
+                            <option value="">Select System Number</option>
+                            <option value="PC-01">PC-01</option>
+                            <option value="PC-02">PC-02</option>
+                            <option value="PC-03">PC-03</option>
+                            <option value="PC-04">PC-04</option>
+                            <option value="PC-05">PC-05</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-unlock btn-lg">
+                        <i class="fas fa-unlock"></i> Unlock & Start Session
+                    </button>
                     
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold fs-5">
-                                <i class="fas fa-id-card me-2"></i>Student ID
-                            </label>
-                            <input type="text" id="studentId" class="form-control form-control-lg" 
-                                   placeholder="Enter your student ID" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold fs-5">
-                                <i class="fas fa-lock me-2"></i>Password
-                            </label>
-                            <input type="password" id="password" class="form-control form-control-lg" 
-                                   placeholder="Enter your password" required>
-                        </div>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold fs-5">
-                                <i class="fas fa-building me-2"></i>Laboratory
-                            </label>
-                            <select id="labNumber" class="form-select form-select-lg" required>
-                                <option value="">Select Laboratory</option>
-                                <option value="LAB-01">Computer Lab 1</option>
-                                <option value="LAB-02">Computer Lab 2</option>
-                                <option value="LAB-03">Computer Lab 3</option>
-                                <option value="LAB-04">Physics Lab</option>
-                                <option value="LAB-05">Chemistry Lab</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold fs-5">
-                                <i class="fas fa-desktop me-2"></i>System Number
-                            </label>
-                            <select id="systemNumber" class="form-select form-select-lg" required>
-                                <option value="">Select System</option>
-                                <option value="SYS-01">System 01</option>
-                                <option value="SYS-02">System 02</option>
-                                <option value="SYS-03">System 03</option>
-                                <option value="SYS-04">System 04</option>
-                                <option value="SYS-05">System 05</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-unlock btn-success w-100 mb-4" id="loginBtn">
-                        <i class="fas fa-unlock me-2"></i>
-                        UNLOCK COMPUTER & START SESSION
+                    <!-- NEW: Forgot Password Button -->
+                    <button type="button" class="btn btn-forgot btn-lg mt-3 w-100" onclick="showForgotPassword()">
+                        <i class="fas fa-key"></i> Forgot Password?
                     </button>
                 </form>
 
-                <!-- Forgot Password Link -->
-                <div class="text-center mb-4">
-                    <a href="#" class="forgot-password-link fs-5" onclick="showForgotPassword(event)">
-                        <i class="fas fa-key me-2"></i>
-                        <strong>Forgot Password? (Click to Test!)</strong>
-                    </a>
+                <!-- NEW: Forgot Password Info Section -->
+                <div class="forgot-password-section">
+                    <h6 class="text-warning mb-2"><i class="fas fa-lightbulb"></i> Forgot Password?</h6>
+                    <p class="text-muted small mb-0">
+                        If you forgot your password, click the button above and enter your <strong>Student ID</strong> 
+                        and <strong>Date of Birth</strong> to reset your password. No phone required!
+                    </p>
                 </div>
 
-                <!-- Status Messages -->
-                <div id="statusMessage" class="mt-3"></div>
-                
-                <!-- Debug Info -->
-                <div class="debug-section">
-                    <h6 class="text-muted mb-2">🔧 Debug Information:</h6>
-                    <div id="debugInfo" class="text-muted">Loading...</div>
+                <div class="debug-section mt-4">
+                    <h6 class="text-muted mb-2"><i class="fas fa-bug"></i> Debug Console</h6>
+                    <div id="debugLog" style="color: #6c757d;">
+                        System initialized. Waiting for login...
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Session Active Modal -->
     <div id="sessionModal" class="session-modal">
         <div class="session-card">
-            <i class="fas fa-check-circle session-icon mb-4"></i>
-            <h1 class="text-success mb-3">✅ SESSION ACTIVE</h1>
-            <h2 class="mb-4">Computer Successfully Unlocked!</h2>
-            <p class="lead mb-4">You may now use this computer normally. The session is being monitored.</p>
+            <div class="session-icon mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1 class="mb-3 text-success"><strong>Session Active!</strong></h1>
+            <h3 class="mb-4">Welcome, <span id="sessionStudentName" class="text-primary">Student</span>!</h3>
             
             <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h4>👤 Student Information</h4>
-                            <div id="sessionStudentInfo">Loading...</div>
-                        </div>
-                    </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">Student ID</h6>
+                    <p class="fw-bold" id="sessionStudentId">---</p>
                 </div>
-                <div class="col-md-6">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h4>🖥️ System Information</h4>
-                            <div id="sessionSystemInfo">Loading...</div>
-                        </div>
-                    </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">System</h6>
+                    <p class="fw-bold" id="sessionSystem">---</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted">Login Time</h6>
+                    <p class="fw-bold" id="sessionLoginTime">---</p>
                 </div>
             </div>
 
-            <div class="mb-4">
-                <h3>⏱️ Session Duration</h3>
-                <div id="sessionDuration" class="duration-display">00:00:00</div>
+            <div class="bg-light p-4 rounded-3 mb-4">
+                <h5 class="text-muted mb-2">Session Duration</h5>
+                <div class="duration-display" id="sessionDuration">00:00:00</div>
             </div>
 
-            <div class="alert alert-success mb-4">
-                <h5 class="mb-2">🎉 <strong>COMPLETE SYSTEM OPERATIONAL!</strong></h5>
-                <p class="mb-0">
-                    ✅ Authentication System • ✅ Real-time Monitoring • ✅ Forgot Password • ✅ Session Tracking
-                </p>
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-video"></i> Your screen is being monitored by the admin dashboard.
             </div>
 
-            <button class="btn btn-danger btn-lg px-5 py-3" onclick="logout()">
-                <i class="fas fa-sign-out-alt me-2"></i>
-                END SESSION & LOCK COMPUTER
+            <button class="btn btn-danger btn-lg px-5" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> End Session & Logout
             </button>
         </div>
     </div>
 
+    <!-- CRITICAL: Load scripts in correct order at the END -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="renderer.js"></script>
+
     <script>
+        // Demo login data
+        const demoUsers = [
+            { studentId: 'DEMO001', password: 'demo123', name: 'Rajesh Kumar' },
+            { studentId: 'DEMO002', password: 'demo123', name: 'Priya Sharma' },
+            { studentId: 'DEMO003', password: 'demo123', name: 'Arjun Patel' }
+        ];
+
+        // Fill demo login
+        function fillDemo(num) {
+            const user = demoUsers[num - 1];
+            document.getElementById('studentId').value = user.studentId;
+            document.getElementById('password').value = user.password;
+            document.getElementById('systemNumber').value = 'PC-0' + num;
+            addDebugLog(`Demo ${num} credentials filled: ${user.name}`);
+        }
+
         let sessionStartTime = null;
-        let sessionInterval = null;
+        let durationInterval = null;
+        let currentSessionId = null;
 
-        // Initialize application
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🎯 Initializing College Lab Kiosk...');
-            await loadSystemInfo();
-            updateTime();
-            setInterval(updateTime, 1000);
-            checkConnection();
-            setInterval(checkConnection, 5000);
-            setupEventHandlers();
-            updateDebugInfo();
-            setInterval(updateDebugInfo, 3000);
-        });
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
 
-        function setupEventHandlers() {
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        function addDebugLog(message) {
+            const debugLog = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `<br>[${timestamp}] ${message}`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
         }
 
         async function loadSystemInfo() {
             try {
-                const info = await window.electronAPI.getSystemInfo();
-                document.getElementById('computerName').textContent = info.computerName;
-                console.log('✅ System info loaded:', info);
+                const sysInfo = await window.electronAPI.getSystemInfo();
+                document.getElementById('computerName').textContent = sysInfo.hostname;
+                addDebugLog(`System loaded: ${sysInfo.hostname}`);
             } catch (error) {
-                console.error('❌ Failed to load system info:', error);
-                document.getElementById('computerName').textContent = 'Unknown Computer';
+                console.error('Error loading system info:', error);
+                addDebugLog(`Error: ${error.message}`);
             }
         }
+        loadSystemInfo();
 
-        function updateTime() {
-            document.getElementById('currentTime').textContent = new Date().toLocaleString();
-        }
-
-        async function checkConnection() {
-            try {
-                const response = await fetch('http://localhost:5000/api/active-sessions', { 
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    updateConnectionStatus(true);
-                    updateDebugInfo(`✅ Server connected | Active sessions: ${data.sessions ? data.sessions.length : 0}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                updateConnectionStatus(false);
-                updateDebugInfo(`❌ Server disconnected | Error: ${error.message}`);
-            }
-        }
-
-        function updateConnectionStatus(connected) {
-            const element = document.getElementById('connectionStatus');
-            if (connected) {
-                element.className = 'connection-status status-connected';
-                element.innerHTML = '<i class="fas fa-wifi"></i> Connected';
-            } else {
-                element.className = 'connection-status status-disconnected';
-                element.innerHTML = '<i class="fas fa-wifi"></i> Disconnected';
-            }
-        }
-
-        function updateDebugInfo(extra = '') {
-            const now = new Date();
-            const studentId = document.getElementById('studentId').value;
-            const password = document.getElementById('password').value;
-            const lab = document.getElementById('labNumber').value;
-            const system = document.getElementById('systemNumber').value;
-
-            const info = [
-                `⏰ Time: ${now.toLocaleString()}`,
-                `👤 Student ID: "${studentId}" (${studentId.length} chars)`,
-                `🔑 Password: ${password ? `"***" (${password.length} chars)` : 'empty'}`,
-                `🏢 Lab: "${lab}"`,
-                `🖥️ System: "${system}"`,
-                `📡 Server: ${document.getElementById('connectionStatus').textContent}`,
-                extra || '🔄 Monitoring active...'
-            ].join('<br>');
-            
-            document.getElementById('debugInfo').innerHTML = info;
-        }
-
-        // Demo account functions
-        function fillDemo(id, pass) {
-            console.log(`🧪 Filling demo account: ${id}`);
-            document.getElementById('studentId').value = id;
-            document.getElementById('password').value = pass;
-            document.getElementById('labNumber').value = 'LAB-01';
-            document.getElementById('systemNumber').value = 'SYS-01';
-            updateDebugInfo(`🧪 Demo account filled: ${id}`);
-            
-            // Add visual feedback
-            const demoButtons = document.querySelectorAll('.demo-btn');
-            demoButtons.forEach(btn => btn.classList.remove('btn-success'));
-            event.target.closest('.demo-btn').classList.add('btn-success');
-        }
-
-        function showForgotPassword(event) {
-            event.preventDefault();
-            alert('🔑 Forgot Password Feature Working!\n\nIn a full system, this would:\n1. Ask for email verification\n2. Send reset link\n3. Allow password change\n\nFor demo: Use the demo accounts above!');
-        }
-
-        // Login handler with detailed logging
-        async function handleLogin(e) {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('🔑 Login attempt started...');
-            
-            const btn = document.getElementById('loginBtn');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Authenticating...';
+
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
+            errorAlert.classList.add('d-none');
+
+            const credentials = {
+                studentId: document.getElementById('studentId').value.trim(),
+                password: document.getElementById('password').value,
+                systemNumber: document.getElementById('systemNumber').value,
+            };
+
+            addDebugLog(`Attempting login for ${credentials.studentId}...`);
 
             try {
-                const credentials = {
-                    studentId: document.getElementById('studentId').value.trim(),
-                    password: document.getElementById('password').value.trim(),
-                    labNumber: document.getElementById('labNumber').value,
-                    systemNumber: document.getElementById('systemNumber').value
-                };
-
-                console.log('🔑 Credentials prepared:', {
-                    studentId: credentials.studentId,
-                    password: '***',
-                    labNumber: credentials.labNumber,
-                    systemNumber: credentials.systemNumber
-                });
-
-                updateDebugInfo(`🔑 Logging in as ${credentials.studentId}...`);
-
                 const result = await window.electronAPI.studentLogin(credentials);
-                console.log('🔑 Login result:', result);
 
-                if (result && result.success) {
-                    console.log('✅ Login successful!', result.student);
-                    showSessionActive(result.student, credentials);
-                    showStatus('🎉 Login successful! Computer unlocked and ready to use.', 'success');
-                    updateDebugInfo(`✅ Login successful for ${result.student.name}`);
+                if (result.success) {
+                    addDebugLog(`✅ Login successful! Session: ${result.sessionId}`);
+                    currentSessionId = result.sessionId;
+
+                    document.getElementById('sessionStudentName').textContent = result.student.name;
+                    document.getElementById('sessionStudentId').textContent = result.student.studentId;
+                    document.getElementById('sessionSystem').textContent = credentials.systemNumber;
+                    document.getElementById('sessionLoginTime').textContent = new Date().toLocaleTimeString();
+
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('sessionModal').style.display = 'flex';
+
+                    sessionStartTime = Date.now();
+                    startDurationCounter();
                 } else {
-                    console.error('❌ Login failed:', result);
-                    const errorMsg = result ? result.error : 'Unknown login error';
-                    showStatus(`❌ Login Failed: ${errorMsg}`, 'danger');
-                    updateDebugInfo(`❌ Login failed: ${errorMsg}`);
-                    
-                    // Show detailed error for debugging
-                    if (errorMsg.includes('Invalid')) {
-                        showStatus(`❌ Invalid credentials. Please check:\n• Student ID: "${credentials.studentId}"\n• Password: "${credentials.password}"\n• Try using demo accounts above`, 'danger');
-                    }
+                    errorMessage.textContent = result.error || 'Login failed';
+                    errorAlert.classList.remove('d-none');
+                    addDebugLog(`❌ Login failed: ${result.error}`);
                 }
             } catch (error) {
-                console.error('💥 Login system error:', error);
-                showStatus(`💥 System Error: ${error.message}. Please try again or contact administrator.`, 'danger');
-                updateDebugInfo(`💥 System error: ${error.message}`);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                console.error('Login error:', error);
+                errorMessage.textContent = 'An error occurred: ' + error.message;
+                errorAlert.classList.remove('d-none');
+                addDebugLog(`❌ Login error: ${error.message}`);
             }
+        });
+
+        function startDurationCounter() {
+            durationInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                const hours = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+                const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+                const seconds = String(elapsed % 60).padStart(2, '0');
+                document.getElementById('sessionDuration').textContent = `${hours}:${minutes}:${seconds}`;
+            }, 1000);
         }
 
-        // Session management
-        function showSessionActive(student, credentials) {
-            console.log('✅ Showing active session for:', student.name);
-            sessionStartTime = new Date();
-            
-            document.getElementById('sessionStudentInfo').innerHTML = `
-                <p class="mb-1"><strong>Name:</strong> ${student.name}</p>
-                <p class="mb-1"><strong>ID:</strong> ${student.studentId}</p>
-                <p class="mb-1"><strong>Email:</strong> ${student.email || 'N/A'}</p>
-                <p class="mb-0"><strong>Department:</strong> ${student.department || 'N/A'}</p>
-            `;
-            
-            document.getElementById('sessionSystemInfo').innerHTML = `
-                <p class="mb-1"><strong>Computer:</strong> ${document.getElementById('computerName').textContent}</p>
-                <p class="mb-1"><strong>Lab:</strong> ${credentials.labNumber}</p>
-                <p class="mb-1"><strong>System:</strong> ${credentials.systemNumber}</p>
-                <p class="mb-0"><strong>Login:</strong> ${sessionStartTime.toLocaleString()}</p>
-            `;
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            addDebugLog('Logout initiated...');
 
-            // Start session timer
-            sessionInterval = setInterval(updateSessionDuration, 1000);
-            
-            // Show session modal with animation
-            document.getElementById('sessionModal').style.display = 'flex';
-            
-            console.log('✅ Session interface displayed');
-        }
-
-        function updateSessionDuration() {
-            if (sessionStartTime) {
-                const duration = Math.floor((new Date() - sessionStartTime) / 1000);
-                const hours = Math.floor(duration / 3600);
-                const minutes = Math.floor((duration % 3600) / 60);
-                const seconds = duration % 60;
-                
-                const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                document.getElementById('sessionDuration').textContent = formattedTime;
-            }
-        }
-
-        async function logout() {
-            console.log('🔓 Logout initiated...');
             try {
                 const result = await window.electronAPI.studentLogout();
-                console.log('🔓 Logout result:', result);
-                
-                if (result && result.success) {
-                    // Clear session
-                    if (sessionInterval) {
-                        clearInterval(sessionInterval);
-                        sessionInterval = null;
+
+                if (result.success) {
+                    addDebugLog('✅ Logout successful');
+
+                    if (durationInterval) {
+                        clearInterval(durationInterval);
+                        durationInterval = null;
                     }
-                    sessionStartTime = null;
-                    
-                    // Hide session modal
-                    document.getElementById('sessionModal').style.display = 'none';
-                    
-                    // Reset form
+
                     document.getElementById('loginForm').reset();
-                    
-                    // Reset demo buttons
-                    document.querySelectorAll('.demo-btn').forEach(btn => {
-                        btn.classList.remove('btn-success');
-                    });
-                    
-                    showStatus('🔒 Session ended successfully. Computer is now locked.', 'warning');
-                    updateDebugInfo('🔒 Session ended - Computer locked');
-                    console.log('✅ Logout completed successfully');
+                    document.getElementById('sessionModal').style.display = 'none';
+                    document.getElementById('loginScreen').style.display = 'flex';
+
+                    sessionStartTime = null;
+                    currentSessionId = null;
                 } else {
-                    showStatus('❌ Logout failed: ' + (result ? result.error : 'Unknown error'), 'danger');
+                    alert('Logout failed: ' + (result.error || 'Unknown error'));
+                    addDebugLog(`❌ Logout failed: ${result.error}`);
                 }
             } catch (error) {
-                console.error('💥 Logout error:', error);
-                showStatus('💥 System error during logout.', 'danger');
+                console.error('Logout error:', error);
+                alert('Logout error: ' + error.message);
+                addDebugLog(`❌ Logout error: ${error.message}`);
             }
-        }
+        });
 
-        function showStatus(message, type) {
-            const div = document.getElementById('statusMessage');
-            
-            if (message) {
-                const alertClass = type === 'success' ? 'alert-success' : 
-                                 type === 'warning' ? 'alert-warning' : 'alert-danger';
-                
-                div.innerHTML = `<div class="alert ${alertClass} alert-dismissible fade show">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>`;
-                
-                // Auto-clear success messages
-                if (type === 'success') {
-                    setTimeout(() => {
-                        div.innerHTML = '';
-                    }, 5000);
-                }
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status status-connected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                addDebugLog('✅ Socket connected');
             } else {
-                div.innerHTML = '';
+                statusEl.className = 'connection-status status-disconnected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
             }
         }
 
-        console.log('🎯 Student Kiosk Interface Ready with Full Debug Mode');
-        console.log('📋 Available demo accounts: 2024001/password123, 2024002/password123, DEMO001/demo123');
+        updateConnectionStatus(false);
+
+        // NEW: Forgot Password Functions
+        function showForgotPassword() {
+            addDebugLog('🔑 Forgot password initiated');
+            
+            const studentId = prompt("🆔 Enter your Student ID:");
+            if (!studentId) {
+                addDebugLog('Forgot password cancelled - no student ID');
+                return;
+            }
+            
+            const dob = prompt(`📅 Enter your Date of Birth (YYYY-MM-DD format):
+
+Example: 2001-05-15
+
+This is your password reset code.`);
+            if (!dob) {
+                addDebugLog('Forgot password cancelled - no date of birth');
+                return;
+            }
+            
+            // Validate date format
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+                alert("❌ Invalid date format!\n\nPlease use YYYY-MM-DD format\nExample: 2001-05-15");
+                addDebugLog('Invalid date format provided');
+                return;
+            }
+            
+            const newPassword = prompt("🔒 Enter new password (minimum 6 characters):");
+            if (!newPassword || newPassword.length < 6) {
+                alert("❌ Password must be at least 6 characters");
+                addDebugLog('Invalid password provided');
+                return;
+            }
+            
+            const confirmPassword = prompt("🔒 Confirm new password:");
+            if (newPassword !== confirmPassword) {
+                alert("❌ Passwords do not match");
+                addDebugLog('Password confirmation failed');
+                return;
+            }
+            
+            // Call password reset API
+            resetPassword(studentId.toUpperCase(), dob, newPassword);
+        }
+
+        async function resetPassword(studentId, dateOfBirth, newPassword) {
+            addDebugLog(`🔄 Attempting password reset for: ${studentId}`);
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, dateOfBirth, newPassword })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Password reset successful!
+
+You can now login with your new password.
+
+Student ID: ${studentId}
+New Password: [Set successfully]
+
+Click OK to continue.`);
+                    
+                    addDebugLog('✅ Password reset completed successfully');
+                    
+                    // Auto-fill the student ID in login form
+                    document.getElementById('studentId').value = studentId;
+                    document.getElementById('password').focus();
+                    
+                    // Show success in debug log
+                    addDebugLog(`Student ID auto-filled: ${studentId}`);
+                    
+                } else {
+                    alert(`❌ Password reset failed:
+
+Error: ${result.error}
+
+Please check your details and try again.`);
+                    addDebugLog(`❌ Password reset error: ${result.error}`);
+                }
+                
+            } catch (error) {
+                alert(`❌ Network error occurred:
+
+${error.message}
+
+Please ensure:
+- Server is running
+- Internet connection is stable
+- Try again in a moment`);
+                
+                addDebugLog(`❌ Network error during password reset: ${error.message}`);
+                console.error('Password reset network error:', error);
+            }
+        }
+
+        // NEW: Add demo forgot password for testing
+        function fillDemoForgotPassword() {
+            alert(`🧪 Demo Forgot Password Test:
+
+Use these demo credentials:
+- Student ID: 2021CS001
+- Date of Birth: 2001-05-15
+- Set any new password
+
+This will work with the sample database.`);
+        }
+
+        // Add keyboard shortcut for demo forgot password (Ctrl+F)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                fillDemoForgotPassword();
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Student First-Time Signin - Lab System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="signin-card">
+            <div class="text-center">
+                <div class="header-icon">🔐</div>
+                <h2 class="mb-2"><strong>First-Time Signin</strong></h2>
+                <p class="text-muted mb-4">Set your password to access college lab systems</p>
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> You can only set your password once. Use your college records details.
+                </div>
+                <div id="statusMessage" class="alert" style="display: none;"></div>
+            </div>
+
+            <!-- Step 1: Verify Student ID -->
+            <div id="step1" class="signin-step">
+                <h5 class="mb-3">Step 1: Enter Your Student ID</h5>
+                <form id="verifyForm">
+                    <div class="mb-3">
+                        <label class="form-label">Student ID (Roll Number) *</label>
+                        <input type="text" class="form-control" id="studentIdCheck" 
+                               placeholder="e.g., 2021CS001" style="text-transform: uppercase;" required>
+                        <div class="form-text">Enter your official college student ID</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="verifyBtn">
+                        <i class="fas fa-search"></i> <span id="verifyText">Verify Student ID</span>
+                        <div class="spinner-border spinner-border-sm d-none" id="verifySpinner"></div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: Complete Details -->
+            <div id="step2" class="signin-step" style="display: none;">
+                <h5 class="mb-3">Step 2: Verify Your Details & Set Password</h5>
+                <div id="studentInfo" class="alert alert-success mb-3"></div>
+                
+                <form id="signinForm">
+                    <input type="hidden" id="verifiedStudentId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Full Name (as per college records) *</label>
+                        <input type="text" class="form-control" id="fullName" 
+                               placeholder="Enter your complete name" required>
+                        <div class="form-text">Must match exactly with college records</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Date of Birth *</label>
+                        <input type="date" class="form-control" id="dateOfBirth" required>
+                        <div class="form-text">
+                            <i class="fas fa-key text-warning"></i> 
+                            Remember this date - needed for password reset in lab
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Create Password *</label>
+                            <div class="password-input">
+                                <input type="password" class="form-control" id="password" 
+                                       minlength="6" placeholder="Minimum 6 characters" required>
+                                <i class="fas fa-eye password-toggle" onclick="togglePassword('password')"></i>
+                            </div>
+                            <div id="passwordStrength" class="password-strength"></div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Confirm Password *</label>
+                            <div class="password-input">
+                                <input type="password" class="form-control" id="confirmPassword" 
+                                       placeholder="Re-enter password" required>
+                                <i class="fas fa-eye password-toggle" onclick="togglePassword('confirmPassword')"></i>
+                            </div>
+                            <div id="passwordMatch" class="form-text"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                I understand this is a one-time setup and I'll use these credentials for lab login
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100" id="signinBtn">
+                        <i class="fas fa-lock"></i> <span id="signinText">Set Password & Complete Signin</span>
+                        <div class="spinner-border spinner-border-sm d-none" id="signinSpinner"></div>
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="resetForm()">
+                        <i class="fas fa-arrow-left"></i> Back to Student ID
+                    </button>
+                </form>
+            </div>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-shield-alt"></i>
+                    Your password will be securely encrypted and stored
+                </small>
+            </div>
+
+            <div class="text-center mt-3">
+                <small>
+                    Already have a password? 
+                    <a href="#" onclick="showKioskInfo()">Go to Lab Computer</a>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="success-icon mb-3">🎉</div>
+                    <h4>Password Set Successfully!</h4>
+                    <div id="successDetails" class="mb-3"></div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Remember:</strong> Use your Date of Birth (DD/MM/YYYY format) for password reset in lab
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="window.close()">
+                        Got it! Take me to lab
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
